@@ -2,6 +2,9 @@
 
 import React, { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
+import { useRouter } from 'next/navigation'
+import Link from 'next/link'
+import axios from 'axios'
 
 interface Message {
   id: number
@@ -9,9 +12,43 @@ interface Message {
   text: string
 }
 
-function HomeClient({ email }: { email: string }) {
+// 1. Static array ko component ke bahar move kiya (Zero re-renders allocation)
+const features = [
+  {
+    title: '1-Line Integration',
+    desc: 'Embed across Next.js, Shopify, WordPress, or custom HTML with a lightweight script tag.',
+    icon: (
+      <svg className="w-5 h-5 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+      </svg>
+    ),
+  },
+  {
+    title: 'Full Knowledge Control',
+    desc: 'Connect your FAQs, documents, or Notion pages. Restrict topics with fine-grained admin guardrails.',
+    icon: (
+      <svg className="w-5 h-5 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+      </svg>
+    ),
+  },
+  {
+    title: 'Always Active, Zero Latency',
+    desc: 'Resolve 80%+ of repetitive queries 24/7 with sub-second response times and seamless human handoff.',
+    icon: (
+      <svg className="w-5 h-5 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+      </svg>
+    ),
+  },
+]
+
+function HomeClient({ email }: { email?: string }) {
+  const router = useRouter()
   const [open, setOpen] = useState(false)
   const popupRef = useRef<HTMLDivElement>(null)
+  const chatScrollRef = useRef<HTMLDivElement>(null)
+  const timerRef = useRef<NodeJS.Timeout | null>(null)
 
   // Interactive Live Chat Simulator State
   const [chatMessages, setChatMessages] = useState<Message[]>([
@@ -20,22 +57,56 @@ function HomeClient({ email }: { email: string }) {
   ])
   const [inputVal, setInputVal] = useState('')
   const [isTyping, setIsTyping] = useState(false)
+  const [isLoggingOut, setIsLoggingOut] = useState(false)
+
+  // Auto-scroll chat to bottom on new message
+  useEffect(() => {
+    if (chatScrollRef.current) {
+      chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight
+    }
+  }, [chatMessages, isTyping])
+
+  // Dropdown outside click handler
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (popupRef.current && !popupRef.current.contains(e.target as Node)) {
+        setOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handler)
+    return () => {
+      document.removeEventListener('mousedown', handler)
+      if (timerRef.current) clearTimeout(timerRef.current)
+    }
+  }, [])
 
   const handleLogin = () => {
     window.location.href = '/api/auth/login'
   }
 
+  const handleLogOut = async () => {
+    try {
+      setIsLoggingOut(true)
+      await axios.get('/api/auth/logout')
+      // Page refresh karke session state clean karo
+      window.location.href = '/'
+    } catch (error) {
+      console.error('Logout error:', error)
+      setIsLoggingOut(false)
+    }
+  }
+
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!inputVal.trim()) return
+    if (!inputVal.trim() || isTyping) return
 
     const newMsg: Message = { id: Date.now(), sender: 'user', text: inputVal.trim() }
     setChatMessages((prev) => [...prev, newMsg])
     setInputVal('')
     setIsTyping(true)
 
-    // Simulate smart AI reply
-    setTimeout(() => {
+    // Simulate smart AI reply with timeout ref cleanup
+    timerRef.current = setTimeout(() => {
       setChatMessages((prev) => [
         ...prev,
         {
@@ -49,46 +120,6 @@ function HomeClient({ email }: { email: string }) {
   }
 
   const firstLetter = email ? email[0].toUpperCase() : ''
-
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (popupRef.current && !popupRef.current.contains(e.target as Node)) {
-        setOpen(false)
-      }
-    }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
-  }, [])
-
-  const features = [
-    {
-      title: '1-Line Integration',
-      desc: 'Embed across Next.js, Shopify, WordPress, or custom HTML with a lightweight script tag.',
-      icon: (
-        <svg className="w-5 h-5 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
-        </svg>
-      ),
-    },
-    {
-      title: 'Full Knowledge Control',
-      desc: 'Connect your FAQs, documents, or Notion pages. Restrict topics with fine-grained admin guardrails.',
-      icon: (
-        <svg className="w-5 h-5 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-        </svg>
-      ),
-    },
-    {
-      title: 'Always Active, Zero Latency',
-      desc: 'Resolve 80%+ of repetitive queries 24/7 with sub-second response times and seamless human handoff.',
-      icon: (
-        <svg className="w-5 h-5 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-        </svg>
-      ),
-    },
-  ]
 
   return (
     <div className="relative min-h-screen bg-[#fafafa] text-zinc-900 selection:bg-zinc-900 selection:text-white overflow-x-hidden font-sans">
@@ -106,21 +137,22 @@ function HomeClient({ email }: { email: string }) {
         className="fixed top-0 left-0 w-full z-50 bg-white/75 backdrop-blur-md border-b border-zinc-200/80"
       >
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2">
+          <Link href="/" className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg bg-black flex items-center justify-center text-white font-bold text-base shadow-sm">
               S
             </div>
             <div className="text-lg font-semibold tracking-tight text-zinc-950">
               Servora <span className="font-normal text-zinc-400">AI</span>
             </div>
-          </div>
+          </Link>
 
           <div className="flex items-center gap-4">
             {email ? (
               <div ref={popupRef} className="relative">
                 <button
+                  type="button"
                   aria-label="User Menu"
-                  className="w-10 h-10 rounded-full bg-zinc-900 text-white flex items-center justify-center font-medium shadow-md hover:ring-2 hover:ring-zinc-400 hover:ring-offset-2 transition-all"
+                  className="w-10 h-10 rounded-full bg-zinc-900 text-white flex items-center justify-center font-medium shadow-md hover:ring-2 hover:ring-zinc-400 hover:ring-offset-2 transition-all cursor-pointer"
                   onClick={() => setOpen((prev) => !prev)}
                 >
                   {firstLetter}
@@ -133,16 +165,28 @@ function HomeClient({ email }: { email: string }) {
                       animate={{ opacity: 1, scale: 1, y: 0 }}
                       exit={{ opacity: 0, scale: 0.95, y: -4 }}
                       transition={{ duration: 0.15 }}
-                      className="absolute right-0 mt-3 w-52 bg-white rounded-2xl shadow-xl border border-zinc-200/80 p-1.5 overflow-hidden"
+                      className="absolute right-0 mt-3 w-52 bg-white rounded-2xl shadow-xl border border-zinc-200/80 p-1.5 overflow-hidden z-50"
                     >
                       <div className="px-3 py-2 text-xs text-zinc-400 border-b border-zinc-100 truncate">
                         {email}
                       </div>
-                      <button className="w-full text-left px-3 py-2 text-sm rounded-lg hover:bg-zinc-100 text-zinc-700 transition font-medium">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setOpen(false)
+                          router.push('/dashboard')
+                        }}
+                        className="w-full text-left px-3 py-2 text-sm rounded-lg hover:bg-zinc-100 text-zinc-700 transition font-medium cursor-pointer"
+                      >
                         Dashboard
                       </button>
-                      <button className="w-full text-left px-3 py-2 text-sm rounded-lg hover:bg-red-50 text-red-600 transition font-medium">
-                        Log Out
+                      <button
+                        type="button"
+                        onClick={handleLogOut}
+                        disabled={isLoggingOut}
+                        className="w-full text-left px-3 py-2 text-sm rounded-lg hover:bg-red-50 text-red-600 transition font-medium disabled:opacity-50 cursor-pointer"
+                      >
+                        {isLoggingOut ? 'Logging out...' : 'Log Out'}
                       </button>
                     </motion.div>
                   )}
@@ -150,8 +194,9 @@ function HomeClient({ email }: { email: string }) {
               </div>
             ) : (
               <button
+                type="button"
                 onClick={handleLogin}
-                className="px-5 py-2 rounded-full bg-zinc-950 text-white text-sm font-medium hover:bg-zinc-800 transition active:scale-95 shadow-sm"
+                className="px-5 py-2 rounded-full bg-zinc-950 text-white text-sm font-medium hover:bg-zinc-800 transition active:scale-95 shadow-sm cursor-pointer"
               >
                 Sign In
               </button>
@@ -170,7 +215,7 @@ function HomeClient({ email }: { email: string }) {
             transition={{ duration: 0.6 }}
             className="lg:col-span-6 space-y-6"
           >
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white border border-zinc-200/80 text-xs font-medium text-zinc-600 shadow-xs">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white border border-zinc-200/80 text-xs font-medium text-zinc-600 shadow-sm">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
               Next-Gen Autonomous Agent Engine
             </div>
@@ -185,21 +230,22 @@ function HomeClient({ email }: { email: string }) {
 
             <div className="pt-2 flex flex-wrap items-center gap-3">
               <button
-                onClick={email ? () => (window.location.href = '/dashboard') : handleLogin}
-                className="px-7 py-3.5 rounded-xl bg-zinc-950 text-white font-medium hover:bg-zinc-800 transition shadow-sm active:scale-98"
+                type="button"
+                onClick={email ? () => router.push('/dashboard') : handleLogin}
+                className="px-7 py-3.5 rounded-xl bg-zinc-950 text-white font-medium hover:bg-zinc-800 transition shadow-sm active:scale-95 cursor-pointer"
               >
                 {email ? 'Go to Dashboard →' : 'Deploy for Free →'}
               </button>
 
               <a
                 href="#features"
-                className="px-6 py-3.5 rounded-xl border border-zinc-200 bg-white font-medium text-zinc-700 hover:bg-zinc-50 hover:border-zinc-300 transition shadow-2xs"
+                className="px-6 py-3.5 rounded-xl border border-zinc-200 bg-white font-medium text-zinc-700 hover:bg-zinc-50 hover:border-zinc-300 transition shadow-sm"
               >
                 See Features
               </a>
             </div>
 
-            {/* Quick Metrics Badge */}
+            {/* Quick Metrics */}
             <div className="pt-8 border-t border-zinc-200/80 grid grid-cols-3 gap-4 text-left">
               <div>
                 <p className="text-2xl font-bold text-zinc-900">&lt; 200ms</p>
@@ -223,7 +269,6 @@ function HomeClient({ email }: { email: string }) {
             transition={{ duration: 0.7, delay: 0.15 }}
             className="lg:col-span-6 relative"
           >
-            {/* Ambient Background Box Glow */}
             <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-indigo-500/10 rounded-3xl blur-2xl transform -rotate-1" />
 
             <div className="relative rounded-2xl bg-white shadow-2xl border border-zinc-200/90 overflow-hidden flex flex-col h-[460px]">
@@ -246,8 +291,11 @@ function HomeClient({ email }: { email: string }) {
                 </span>
               </div>
 
-              {/* Chat Message Window */}
-              <div className="flex-1 p-5 overflow-y-auto space-y-3.5 bg-gradient-to-b from-white to-zinc-50/30">
+              {/* Chat Message Window with Ref for Auto-Scroll */}
+              <div
+                ref={chatScrollRef}
+                className="flex-1 p-5 overflow-y-auto space-y-3.5 bg-gradient-to-b from-white to-zinc-50/30 scroll-smooth"
+              >
                 {chatMessages.map((msg) => (
                   <motion.div
                     key={msg.id}
@@ -258,8 +306,8 @@ function HomeClient({ email }: { email: string }) {
                     <div
                       className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
                         msg.sender === 'user'
-                          ? 'bg-zinc-900 text-white rounded-br-xs'
-                          : 'bg-zinc-100 text-zinc-800 rounded-bl-xs border border-zinc-200/60'
+                          ? 'bg-zinc-900 text-white rounded-br-sm'
+                          : 'bg-zinc-100 text-zinc-800 rounded-bl-sm border border-zinc-200/60'
                       }`}
                     >
                       {msg.text}
@@ -289,8 +337,8 @@ function HomeClient({ email }: { email: string }) {
                 />
                 <button
                   type="submit"
-                  disabled={!inputVal.trim()}
-                  className="px-4 py-2 bg-zinc-900 text-white rounded-xl text-sm font-medium hover:bg-zinc-800 disabled:opacity-40 transition"
+                  disabled={!inputVal.trim() || isTyping}
+                  className="px-4 py-2 bg-zinc-900 text-white rounded-xl text-sm font-medium hover:bg-zinc-800 disabled:opacity-40 transition cursor-pointer"
                 >
                   Send
                 </button>
@@ -323,7 +371,7 @@ function HomeClient({ email }: { email: string }) {
                 className="group p-8 rounded-2xl bg-zinc-50 border border-zinc-200/70 hover:border-zinc-300 hover:bg-zinc-100/50 transition duration-200 flex flex-col justify-between"
               >
                 <div>
-                  <div className="w-10 h-10 rounded-xl bg-white border border-zinc-200 flex items-center justify-center mb-5 shadow-2xs group-hover:scale-105 transition">
+                  <div className="w-10 h-10 rounded-xl bg-white border border-zinc-200 flex items-center justify-center mb-5 shadow-sm group-hover:scale-105 transition">
                     {f.icon}
                   </div>
                   <h3 className="text-lg font-semibold text-zinc-900">{f.title}</h3>
@@ -338,11 +386,13 @@ function HomeClient({ email }: { email: string }) {
       {/* Footer */}
       <footer className="py-12 border-t border-zinc-200 bg-zinc-50 text-center text-sm text-zinc-500">
         <div className="max-w-7xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p>&copy; {new Date().getFullYear()} ServoraAI. Built for high-conversion stores & SaaS.</p>
+          <p>
+            &copy; 2026 ServoraAI. Built for high-conversion stores &amp; SaaS.
+          </p>
           <div className="flex gap-6 text-xs text-zinc-500">
-            <a href="#" className="hover:text-zinc-900 transition">Privacy</a>
-            <a href="#" className="hover:text-zinc-900 transition">Terms</a>
-            <a href="#" className="hover:text-zinc-900 transition">Documentation</a>
+            <Link href="/privacy" className="hover:text-zinc-900 transition">Privacy</Link>
+            <Link href="/terms" className="hover:text-zinc-900 transition">Terms</Link>
+            <Link href="/docs" className="hover:text-zinc-900 transition">Documentation</Link>
           </div>
         </div>
       </footer>
