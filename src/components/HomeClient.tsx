@@ -6,13 +6,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import axios from 'axios'
 
-interface Message {
-  id: number
-  sender: 'user' | 'ai'
-  text: string
-}
-
-// 1. Static array ko component ke bahar move kiya (Zero re-renders allocation)
+// Static features list
 const features = [
   {
     title: '1-Line Integration',
@@ -43,28 +37,39 @@ const features = [
   },
 ]
 
+// Dummy chat showcase messages
+const DUMMY_CONVERSATION = [
+  {
+    id: 1,
+    sender: 'user',
+    text: 'Do you offer cash on delivery & instant returns?',
+    time: '2:14 PM',
+  },
+  {
+    id: 2,
+    sender: 'ai',
+    text: 'Yes! Cash on Delivery is available across all serviceable pincodes, and return pickups are scheduled within 24 hours of request.',
+    time: '2:14 PM',
+  },
+  {
+    id: 3,
+    sender: 'user',
+    text: 'What are your support working hours?',
+    time: '2:15 PM',
+  },
+  {
+    id: 4,
+    sender: 'ai',
+    text: 'Our human support team is available Monday to Saturday, 9:00 AM to 8:00 PM IST. Our AI assistant is active 24/7!',
+    time: '2:15 PM',
+  },
+]
+
 function HomeClient({ email }: { email?: string }) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const popupRef = useRef<HTMLDivElement>(null)
-  const chatScrollRef = useRef<HTMLDivElement>(null)
-  const timerRef = useRef<NodeJS.Timeout | null>(null)
-
-  // Interactive Live Chat Simulator State
-  const [chatMessages, setChatMessages] = useState<Message[]>([
-    { id: 1, sender: 'user', text: 'Do you offer cash on delivery & instant returns?' },
-    { id: 2, sender: 'ai', text: 'Yes! COD is supported nationwide, and return pickups are scheduled in 24 hours.' },
-  ])
-  const [inputVal, setInputVal] = useState('')
-  const [isTyping, setIsTyping] = useState(false)
   const [isLoggingOut, setIsLoggingOut] = useState(false)
-
-  // Auto-scroll chat to bottom on new message
-  useEffect(() => {
-    if (chatScrollRef.current) {
-      chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight
-    }
-  }, [chatMessages, isTyping])
 
   // Dropdown outside click handler
   useEffect(() => {
@@ -76,7 +81,6 @@ function HomeClient({ email }: { email?: string }) {
     document.addEventListener('mousedown', handler)
     return () => {
       document.removeEventListener('mousedown', handler)
-      if (timerRef.current) clearTimeout(timerRef.current)
     }
   }, [])
 
@@ -88,35 +92,11 @@ function HomeClient({ email }: { email?: string }) {
     try {
       setIsLoggingOut(true)
       await axios.get('/api/auth/logout')
-      // Page refresh karke session state clean karo
       window.location.href = '/'
     } catch (error) {
       console.error('Logout error:', error)
       setIsLoggingOut(false)
     }
-  }
-
-  const handleSendMessage = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!inputVal.trim() || isTyping) return
-
-    const newMsg: Message = { id: Date.now(), sender: 'user', text: inputVal.trim() }
-    setChatMessages((prev) => [...prev, newMsg])
-    setInputVal('')
-    setIsTyping(true)
-
-    // Simulate smart AI reply with timeout ref cleanup
-    timerRef.current = setTimeout(() => {
-      setChatMessages((prev) => [
-        ...prev,
-        {
-          id: Date.now() + 1,
-          sender: 'ai',
-          text: 'Servora AI indexed your knowledge base and answered in 0.18s!',
-        },
-      ])
-      setIsTyping(false)
-    }, 1200)
   }
 
   const firstLetter = email ? email[0].toUpperCase() : ''
@@ -137,8 +117,8 @@ function HomeClient({ email }: { email?: string }) {
         className="fixed top-0 left-0 w-full z-50 bg-white/75 backdrop-blur-md border-b border-zinc-200/80"
       >
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-black flex items-center justify-center text-white font-bold text-base shadow-sm">
+          <Link href="/" className="flex items-center gap-2 group">
+            <div className="w-8 h-8 rounded-lg bg-black flex items-center justify-center text-white font-bold text-base shadow-sm group-hover:scale-105 transition">
               S
             </div>
             <div className="text-lg font-semibold tracking-tight text-zinc-950">
@@ -146,7 +126,19 @@ function HomeClient({ email }: { email?: string }) {
             </div>
           </Link>
 
-          <div className="flex items-center gap-4">
+          {/* Header Action Items */}
+          <div className="flex items-center gap-3">
+            {/* Documentation Button */}
+            <Link
+              href="/docs"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-medium text-zinc-600 hover:text-zinc-950 hover:bg-zinc-100/80 transition"
+            >
+              <svg className="w-4 h-4 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+              </svg>
+              Docs
+            </Link>
+
             {email ? (
               <div ref={popupRef} className="relative">
                 <button
@@ -237,12 +229,12 @@ function HomeClient({ email }: { email?: string }) {
                 {email ? 'Go to Dashboard →' : 'Deploy for Free →'}
               </button>
 
-              <a
-                href="#features"
-                className="px-6 py-3.5 rounded-xl border border-zinc-200 bg-white font-medium text-zinc-700 hover:bg-zinc-50 hover:border-zinc-300 transition shadow-sm"
+              <Link
+                href="/docs"
+                className="px-6 py-3.5 rounded-xl border border-zinc-200 bg-white font-medium text-zinc-700 hover:bg-zinc-50 hover:border-zinc-300 transition shadow-sm inline-flex items-center gap-1.5"
               >
-                See Features
-              </a>
+                Read Docs
+              </Link>
             </div>
 
             {/* Quick Metrics */}
@@ -262,7 +254,7 @@ function HomeClient({ email }: { email?: string }) {
             </div>
           </motion.div>
 
-          {/* Right Column: Interactive Chat Playground */}
+          {/* Right Column: Dummy Preview Showcase */}
           <motion.div
             initial={{ opacity: 0, scale: 0.96 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -271,9 +263,9 @@ function HomeClient({ email }: { email?: string }) {
           >
             <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-indigo-500/10 rounded-3xl blur-2xl transform -rotate-1" />
 
-            <div className="relative rounded-2xl bg-white shadow-2xl border border-zinc-200/90 overflow-hidden flex flex-col h-[460px]">
+            <div className="relative rounded-2xl bg-white shadow-2xl border border-zinc-200/90 overflow-hidden flex flex-col h-[470px]">
               {/* Card Header */}
-              <div className="px-5 py-3.5 border-b border-zinc-100 flex items-center justify-between bg-zinc-50/50">
+              <div className="px-5 py-3.5 border-b border-zinc-100 flex items-center justify-between bg-zinc-50/60">
                 <div className="flex items-center gap-2.5">
                   <div className="relative">
                     <div className="w-8 h-8 rounded-full bg-zinc-950 text-white flex items-center justify-center text-xs font-semibold">
@@ -283,66 +275,55 @@ function HomeClient({ email }: { email?: string }) {
                   </div>
                   <div>
                     <h3 className="text-sm font-semibold text-zinc-900 leading-none">Servora Assistant</h3>
-                    <p className="text-[11px] text-zinc-400 mt-1">Trained on store policies</p>
+                    <p className="text-[11px] text-zinc-400 mt-1">Autonomous Support Agent</p>
                   </div>
                 </div>
-                <span className="text-xs px-2 py-0.5 rounded-md bg-zinc-100 text-zinc-600 font-mono">
-                  Live Preview
+                <span className="text-[11px] font-medium px-2.5 py-1 rounded-full bg-zinc-100 text-zinc-600 border border-zinc-200/80">
+                  Preview Demo
                 </span>
               </div>
 
-              {/* Chat Message Window with Ref for Auto-Scroll */}
-              <div
-                ref={chatScrollRef}
-                className="flex-1 p-5 overflow-y-auto space-y-3.5 bg-gradient-to-b from-white to-zinc-50/30 scroll-smooth"
-              >
-                {chatMessages.map((msg) => (
+              {/* Chat Message Window */}
+              <div className="flex-1 p-5 overflow-y-auto space-y-3 bg-gradient-to-b from-white to-zinc-50/40">
+                {DUMMY_CONVERSATION.map((msg) => (
                   <motion.div
                     key={msg.id}
-                    initial={{ opacity: 0, y: 10 }}
+                    initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+                    transition={{ duration: 0.3 }}
+                    className={`flex flex-col ${msg.sender === 'user' ? 'items-end' : 'items-start'}`}
                   >
                     <div
-                      className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
+                      className={`max-w-[82%] rounded-2xl px-4 py-2.5 text-xs sm:text-sm leading-relaxed ${
                         msg.sender === 'user'
-                          ? 'bg-zinc-900 text-white rounded-br-sm'
-                          : 'bg-zinc-100 text-zinc-800 rounded-bl-sm border border-zinc-200/60'
+                          ? 'bg-zinc-900 text-white rounded-br-xs'
+                          : 'bg-white text-zinc-800 rounded-bl-xs border border-zinc-200/80 shadow-xs'
                       }`}
                     >
                       {msg.text}
                     </div>
+                    <span className="text-[10px] text-zinc-400 mt-1 px-1">{msg.time}</span>
                   </motion.div>
                 ))}
-
-                {isTyping && (
-                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex justify-start">
-                    <div className="bg-zinc-100 rounded-2xl px-4 py-2 text-zinc-500 text-xs flex items-center gap-1.5 border border-zinc-200/60">
-                      <span className="w-1.5 h-1.5 rounded-full bg-zinc-400 animate-bounce" />
-                      <span className="w-1.5 h-1.5 rounded-full bg-zinc-400 animate-bounce [animation-delay:0.2s]" />
-                      <span className="w-1.5 h-1.5 rounded-full bg-zinc-400 animate-bounce [animation-delay:0.4s]" />
-                    </div>
-                  </motion.div>
-                )}
               </div>
 
-              {/* Chat Input Bar */}
-              <form onSubmit={handleSendMessage} className="p-3 bg-white border-t border-zinc-100 flex gap-2">
-                <input
-                  type="text"
-                  placeholder="Ask a question..."
-                  value={inputVal}
-                  onChange={(e) => setInputVal(e.target.value)}
-                  className="flex-1 bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-400 transition"
-                />
+              {/* Dummy Footer (No Send Button, Lock Banner) */}
+              <div className="p-3.5 bg-zinc-50 border-t border-zinc-100 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2 text-xs text-zinc-500">
+                  <svg className="w-4 h-4 text-zinc-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                  </svg>
+                  <span>Interactive chat simulator dashboard me active hai</span>
+                </div>
+
                 <button
-                  type="submit"
-                  disabled={!inputVal.trim() || isTyping}
-                  className="px-4 py-2 bg-zinc-900 text-white rounded-xl text-sm font-medium hover:bg-zinc-800 disabled:opacity-40 transition cursor-pointer"
+                  type="button"
+                  onClick={email ? () => router.push('/dashboard') : handleLogin}
+                  className="text-xs font-semibold text-zinc-950 hover:text-zinc-700 transition cursor-pointer shrink-0"
                 >
-                  Send
+                  {email ? 'Open Dashboard →' : 'Sign in to Test →'}
                 </button>
-              </form>
+              </div>
             </div>
           </motion.div>
         </div>
@@ -383,16 +364,23 @@ function HomeClient({ email }: { email?: string }) {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="py-12 border-t border-zinc-200 bg-zinc-50 text-center text-sm text-zinc-500">
+      {/* Modernized Footer */}
+      <footer className="py-12 border-t border-zinc-200 bg-zinc-50 text-sm text-zinc-500">
         <div className="max-w-7xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
           <p>
             &copy; 2026 ServoraAI. Built for high-conversion stores &amp; SaaS.
           </p>
-          <div className="flex gap-6 text-xs text-zinc-500">
-            <Link href="/privacy" className="hover:text-zinc-900 transition">Privacy</Link>
-            <Link href="/terms" className="hover:text-zinc-900 transition">Terms</Link>
-            <Link href="/docs" className="hover:text-zinc-900 transition">Documentation</Link>
+
+          {/* Clean Dummy Status & Docs */}
+          <div className="flex flex-wrap items-center gap-5 text-xs text-zinc-500">
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 font-medium">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              All systems operational
+            </div>
+            <span className="font-mono text-zinc-400">v1.2.4-prod</span>
+            <Link href="/docs" className="hover:text-zinc-900 transition font-medium">
+              Documentation
+            </Link>
           </div>
         </div>
       </footer>

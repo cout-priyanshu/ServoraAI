@@ -9,8 +9,10 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@google/genai": "^3.0.0",
     "@scalekit-sdk/node": "^2.21.0",
     "axios": "^1.21.0",
+    "groq-sdk": "^1.6.0",
     "mongoose": "^9.12.0",
     "motion": "^14.7.1",
     "next": "16.4.3",
