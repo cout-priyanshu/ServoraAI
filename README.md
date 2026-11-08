@@ -1,36 +1,25 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+Servora AI ⚡
 
-## Getting Started
+    Autonomous, zero-hallucination customer support chatbot platform built for e-commerce stores, SaaS products, and modern websites.
 
-First, run the development server:
+📌 Overview
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+Servora AI enables businesses to deploy a fully autonomous AI support representative in under two minutes using a single embeddable script tag.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Unlike generic conversational bots, Servora uses deterministic knowledge grounding. The agent strictly references the business's saved shipping rules, refund guidelines, working hours, and FAQs. If a customer asks an unverified query, the assistant politely escalates the issue to the merchant's support email rather than inventing false policies.
+🚀 Key Features
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+    Embed Script: Connect across plain HTML, Next.js, React, Shopify, or WordPress via a lightweight <script> tag.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+    Deterministic Policy Grounding: Answers queries exclusively from the merchant's stored knowledge base with strict guardrails against hallucinations.
 
-## Learn More
+    Sub-Second LLM Inferences: Powered by Groq's high-throughput LPU infrastructure and Google Gemini Flash models for instantaneous responses.
 
-To learn more about Next.js, take a look at the following resources:
+    Fallback Resilience: Dynamic multi-model fallback chain to bypass server rate limits, congestion, or outages.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+    Live AI Sandbox: Built-in interactive dashboard simulator to test agent responses against store configurations in real time.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+    CORS-Enabled REST Endpoints: Secured cross-origin endpoints allowing external storefronts to communicate seamlessly with your central API.
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+    Responsive Floating Widget: Polished vanilla JavaScript client featuring dynamic opening animations, active typing indicators, and mobile-friendly responsive viewports.
+    
