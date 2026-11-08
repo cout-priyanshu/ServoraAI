@@ -222,7 +222,7 @@ export function ChatbotWidget() {
               language="html"
               code={`<!-- Servora AI Widget -->
 <script
-  src="http://localhost:3000/chatbot.js"
+  src="https://servora-ai-olive.vercel.app/chatbot.js"
   data-owner-id="usr_your_owner_id"
   defer
 ></script>`}
