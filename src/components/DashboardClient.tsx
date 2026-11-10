@@ -184,7 +184,7 @@ function DashboardClient({ ownerId }: { ownerId: string }) {
 
   const embedCodeSnippet = `<!-- Servora AI Widget -->
 <script
-  src="https://servora-ai-olive.vercel.app/chatbot.js"
+  src="https://servora-ai-olive.vercel.app/chatBot.js"
   data-owner-id="${ownerId || 'your-owner-id'}"
   defer
 ></script>`
